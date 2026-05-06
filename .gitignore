@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Local databases & data
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+juizo_cejusc.db*
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+secrets.json
+*.key
+*.pem
+.envrc
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+.next/
+.cache/
+.parcel-cache/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# OS
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+logs/
+
+# Build outputs
+build/
+*.whl
+*.tar.gz
+
+# Docker
+.dockerignore.tmp

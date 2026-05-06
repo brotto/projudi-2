@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JUÍZO — Sistema de Informação Jurisdicional v0.2</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0f;
+    --parchment: #f5f0e8;
+    --gold: #c9a84c;
+    --gold-dim: #7a6330;
+    --cyan: #4ecdc4;
+    --green: #57cc99;
+    --red: #e63946;
+    --purple: #9b72cf;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --surface3: #14141e;
+    --border: rgba(201,168,76,0.2);
+    --border-cyan: rgba(78,205,196,0.2);
+    --text: #e8e4d8;
+    --text-dim: #7a7870;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    overflow-x: hidden;
+  }
+
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.3;
+  }
+
+  .layer { position: relative; z-index: 1; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2.5rem;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--parchment);
+    letter-spacing: -0.02em;
+  }
+
+  .nav-logo span { color: var(--gold); }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--gold); }
+
+  .nav-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border);
+    color: var(--gold);
+    letter-spacing: 0.15em;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.45em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(4.5rem, 13vw, 11rem);
+    line-height: 0.88;
+    letter-spacing: -0.03em;
+    color: var(--parchment);
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  .hero-title span {
+    color: var(--gold);
+    font-style: italic;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+  }
+
+  .hero-subtitle {
+    margin-top: 2.5rem;
+    font-size: clamp(1.1rem, 2vw, 1.45rem);
+    font-style: italic;
+    color: var(--text-dim);
+    max-width: 640px;
+    line-height: 1.75;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .hero-axiom {
+    margin-top: 2.5rem;
+    padding: 1.5rem 2.5rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    background: rgba(201,168,76,0.03);
+    max-width: 760px;
+    font-size: 1.1rem;
+    line-height: 1.85;
+    color: var(--text);
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+
+  .hero-axiom em { color: var(--gold); font-style: normal; }
+
+  .hero-chips {
+    margin-top: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+  }
+
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(78,205,196,0.25);
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    background: rgba(78,205,196,0.04);
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 1.8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+    animation: pulse 2s infinite;
+  }
+
+  /* ── SEÇÕES ── */
+  section {
+    padding: 6rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: var(--parchment);
+    line-height: 1.08;
+    margin-bottom: 2.5rem;
+  }
+
+  .section-title em {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  .section-intro {
+    font-size: 1.08rem;
+    line-height: 1.9;
+    color: var(--text-dim);
+    max-width: 700px;
+    margin-bottom: 2.5rem;
+  }
+
+  .section-intro strong { color: var(--parchment); }
+
+  /* ── ONTOLOGY TABLE ── */
+  .ontology-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    margin: 2.5rem 0;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .ont-old, .ont-new {
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .ont-old {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    text-align: right;
+    text-decoration: line-through;
+    text-decoration-color: var(--red);
+    text-decoration-thickness: 1px;
+    background: rgba(230,57,70,0.02);
+  }
+
+  .ont-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.1rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--gold);
+  }
+
+  .ont-new {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--cyan);
+    letter-spacing: 0.02em;
+    background: rgba(78,205,196,0.02);
+  }
+
+  /* ── GIT MODEL ── */
+  .git-diagram {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 2.5rem 2rem;
+    margin: 2.5rem 0;
+    overflow-x: auto;
+  }
+
+  .git-track {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    min-width: 700px;
+  }
+
+  .git-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .git-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    width: 120px;
+    flex-shrink: 0;
+    color: var(--text-dim);
+  }
+
+  .git-label.main { color: var(--gold); }
+  .git-label.branch { color: var(--cyan); }
+  .git-label.dead { color: var(--red); opacity: 0.6; }
+
+  .git-line {
+    flex: 1;
+    height: 2px;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .git-line.main { background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+  .git-line.branch { background: linear-gradient(90deg, var(--cyan), rgba(78,205,196,0.3)); }
+  .git-line.dead { background: linear-gradient(90deg, var(--red), rgba(230,57,70,0.2)); }
+
+  .git-node {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: var(--ink);
+    position: absolute;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .git-node:hover { transform: scale(1.5); }
+  .git-node.main { border-color: var(--gold); }
+  .git-node.branch { border-color: var(--cyan); }
+  .git-node.merge { border-color: var(--green); background: rgba(87,204,153,0.2); }
+  .git-node.dead { border-color: var(--red); opacity: 0.5; }
+  .git-node.terminal { border-color: var(--gold); background: var(--gold); }
+
+  .git-node-label {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.48rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  .git-connector {
+    width: 2px;
+    background: var(--cyan);
+    position: absolute;
+    opacity: 0.4;
+  }
+
+  .git-legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .git-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .git-legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 2px solid;
+    flex-shrink: 0;
+  }
+
+  /* ── FSM ── */
+  .fsm-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2.5rem 2rem;
+    overflow-x: auto;
+    margin: 2.5rem 0;
+  }
+
+  .fsm-flow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 1.2rem;
+  }
+
+  .fsm-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .fsm-state {
+    padding: 0.65rem 1.1rem;
+    border: 1px solid var(--gold-dim);
+    background: rgba(201,168,76,0.04);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .fsm-state:hover {
+    background: rgba(201,168,76,0.1);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+  }
+
+  .fsm-state.terminal {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(78,205,196,0.04);
+  }
+
+  .fsm-state.cejusc {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(87,204,153,0.04);
+  }
+
+  .fsm-rule {
+    margin-top: 0.3rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--text-dim);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  .fsm-arrow {
+    padding: 0 0.2rem;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    align-self: center;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: #0d0d14;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 3px solid var(--cyan);
+    padding: 2rem 1.8rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 0.6rem;
+    right: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .code-block pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    color: var(--text);
+  }
+
+  .c-keyword { color: var(--purple); }
+  .c-class { color: #e6a817; }
+  .c-string { color: var(--green); }
+  .c-comment { color: #4a5568; font-style: italic; }
+  .c-param { color: var(--cyan); }
+  .c-value { color: #fc8c03; }
+  .c-method { color: #82aaff; }
+
+  /* ── AGENT IA ── */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2.5rem 0;
+  }
+
+  .agent-card {
+    padding: 2rem;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .agent-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+  }
+
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .agent-card.layer1::before { background: var(--gold); }
+  .agent-card.layer2::before { background: var(--cyan); }
+  .agent-card.layer3::before { background: var(--purple); }
+  .agent-card.layer4::before { background: var(--green); }
+
+  .agent-layer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .agent-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--parchment);
+    margin-bottom: 0.8rem;
+  }
+
+  .agent-text {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: var(--text-dim);
+  }
+
+  /* ── PILARES ── */
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 1.2rem;
+    margin: 2.5rem 0;
+  }
+
+  .pillar {
+    padding: 1.8rem;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-top: 2px solid var(--gold);
+    transition: all 0.3s;
+  }
+
+  .pillar:hover {
+    border-top-color: var(--cyan);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  }
+
+  .pillar-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: rgba(201,168,76,0.12);
+    line-height: 1;
+    margin-bottom: 0.8rem;
+  }
+
+  .pillar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--parchment);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+
+  .pillar-text {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: var(--text-dim);
+  }
+
+  /* ── STAKEHOLDERS ── */
+  .stakeholders {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.8rem;
+    margin: 2.5rem 0;
+  }
+
+  .stakeholder {
+    padding: 1.4rem 0.8rem;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .stakeholder:hover {
+    background: var(--surface2);
+    border-color: var(--gold-dim);
+  }
+
+  .stakeholder-icon { font-size: 1.6rem; margin-bottom: 0.7rem; display: block; }
+
+  .stakeholder-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--parchment);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+
+  .stakeholder-role { font-size: 0.72rem; color: var(--text-dim); line-height: 1.5; }
+
+  /* ── MIGRATION ── */
+  .migration-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2.5rem 0;
+  }
+
+  .migration-card {
+    padding: 2rem;
+    background: var(--surface3);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .migration-card h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--parchment);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .migration-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .migration-card ul li {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+
+  .migration-card ul li::before {
+    content: '→';
+    color: var(--gold);
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    margin-top: 0.1rem;
+  }
+
+  /* ── PRINCIPLE BOX ── */
+  .principle-box {
+    position: relative;
+    padding: 2.5rem 3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 2.5rem 0;
+  }
+
+  .principle-box::before {
+    content: '"';
+    position: absolute;
+    top: -1.5rem; left: 1rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 9rem;
+    color: var(--gold);
+    opacity: 0.07;
+    line-height: 1;
+  }
+
+  .principle-text {
+    font-size: clamp(1.2rem, 2.2vw, 1.75rem);
+    font-style: italic;
+    line-height: 1.75;
+    color: var(--parchment);
+    position: relative;
+  }
+
+  .principle-source {
+    margin-top: 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+  }
+
+  /* ── STATE BADGE ── */
+  .state-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    padding: 0.18rem 0.5rem;
+    background: rgba(78,205,196,0.07);
+    border: 1px solid rgba(78,205,196,0.25);
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    margin: 0.15rem;
+  }
+
+  .state-badge.gold {
+    background: rgba(201,168,76,0.07);
+    border-color: rgba(201,168,76,0.25);
+    color: var(--gold);
+  }
+
+  .state-badge.green {
+    background: rgba(87,204,153,0.07);
+    border-color: rgba(87,204,153,0.25);
+    color: var(--green);
+  }
+
+  /* ── MANIFESTO ── */
+  .manifesto {
+    text-align: center;
+    padding: 8rem 2rem;
+    background: linear-gradient(180deg, var(--ink) 0%, #0c0c17 100%);
+    border-top: 1px solid var(--border);
+  }
+
+  .manifesto-line {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.4rem, 3.5vw, 2.6rem);
+    font-style: italic;
+    color: var(--text-dim);
+    margin: 0.7rem 0;
+    opacity: 0;
+    transform: translateY(18px);
+    transition: all 0.9s;
+  }
+
+  .manifesto-line.visible { opacity: 1; transform: translateY(0); }
+  .manifesto-line strong { color: var(--parchment); font-style: normal; font-weight: 300; }
+  .manifesto-line.gold { color: var(--gold); }
+  .manifesto-line.cyan { color: var(--cyan); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.9; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .ontology-grid { grid-template-columns: 1fr; }
+    .ont-old { text-align: left; }
+    .ont-arrow { display: none; }
+    .agent-grid, .migration-grid { grid-template-columns: 1fr; }
+    nav .nav-links { display: none; }
+    .fsm-flow { flex-direction: column; align-items: flex-start; }
+    .fsm-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<nav>
+  <div class="nav-logo">JUÍZO<span>.</span></div>
+  <ul class="nav-links">
+    <li><a href="#ontologia">Ontologia</a></li>
+    <li><a href="#git">Modelo Git</a></li>
+    <li><a href="#fsm">FSM</a></li>
+    <li><a href="#dsl">juizo-core</a></li>
+    <li><a href="#agente">Agente IA</a></li>
+    <li><a href="#integracao">Integração</a></li>
+    <li><a href="#cejusc">CEJUSC</a></li>
+  </ul>
+  <div class="nav-badge">v0.2 · CONCEITO</div>
+</nav>
+
+<div class="layer">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="tagline">Sistema de Informação Jurisdicional · Arquitetura Fundacional · v0.2</div>
+    <h1 class="hero-title">JUÍZO<br><span>redefinido</span></h1>
+    <p class="hero-subtitle">
+      O processo judicial como dataset vivo — event sourcing, branching jurisdicional e jurisprudência emergente de baixo
+    </p>
+    <div class="hero-axiom">
+      Os Códigos Processuais regulam o <em>fluxo da informação</em>, não o seu <em>suporte físico</em>.
+      O processo nunca foi papel. Sempre foi programação levada a deploy.
+      <em>A sentença é a versão em produção.</em>
+    </div>
+    <div class="hero-chips">
+      <span class="chip">Event Sourcing</span>
+      <span class="chip">FSM por Rito</span>
+      <span class="chip">Git Branching</span>
+      <span class="chip">DSL Processual</span>
+      <span class="chip">Agente IA por Magistrado</span>
+      <span class="chip">Jurisprudência Emergente</span>
+      <span class="chip">REST Semântico</span>
+      <span class="chip">Append-Only Log</span>
+    </div>
+    <div class="scroll-hint">↓ · · · explorar · · · ↓</div>
+  </div>
+
+  <!-- 01 ONTOLOGIA -->
+  <section id="ontologia">
+    <div class="section-label">01 · Fundamento Ontológico</div>
+    <h2 class="section-title">A <em>reontologização</em><br>do processo</h2>
+    <p class="section-intro">
+      Cada ato processual é um <strong>evento informacional</strong> com estrutura, destinatários, prazos e 
+      consequências computáveis. O "caderno processual" foi uma solução tecnológica do século XVII 
+      para um problema de organização de dados. Não mais.
+    </p>
+
+    <div class="ontology-grid">
+      <div class="ont-old">Autos do processo</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Dataset Jurisdicional · Append-Only Log Imutável</div>
+
+      <div class="ont-old">Petição</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Objeto Estruturado · POST /processo/{id}/eventos</div>
+
+      <div class="ont-old">Despacho / Decisão</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Nó Computável · Dispara Transições Automáticas</div>
+
+      <div class="ont-old">Pedido intempestivo / chicana</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Branch Isolado · Custo recai sobre quem pede</div>
+
+      <div class="ont-old">Intimação / Diário Oficial</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Protocolo de Notificação com ACK Confirmável</div>
+
+      <div class="ont-old">Fase processual</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Estado de FSM · Transições Válidas Definidas em Código</div>
+
+      <div class="ont-old">Jurisprudência top-down (7 ministros)</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Entendimento Emergente · Agregação de N magistrados</div>
+
+      <div class="ont-old">Trânsito em julgado</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">v1.0.0-stable · Estado Terminal Imutável · Frozen</div>
+
+      <div class="ont-old">Sentença</div>
+      <div class="ont-arrow">→</div>
+      <div class="ont-new">Deploy em Produção · Reformável via hotfix (recurso)</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 02 GIT MODEL -->
+  <section id="git">
+    <div class="section-label">02 · Modelo de Versionamento</div>
+    <h2 class="section-title">O processo como<br><em>repositório Git</em></h2>
+    <p class="section-intro">
+      O processo não é uma pilha linear de documentos — é um <strong>DAG (Directed Acyclic Graph)</strong>, 
+      exatamente como o modelo interno do Git. O main branch é o processo principal. 
+      Incidentes são branches. Deferimentos são merges. O trânsito em julgado é o tag de release.
+    </p>
+
+    <div class="git-diagram">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:var(--text-dim); margin-bottom:2rem; letter-spacing:0.15em;">
+        EXEMPLO · PROCESSO PENAL · RESPOSTA À ACUSAÇÃO COM INCIDENTE DE ARROLAMENTO DE TESTEMUNHAS
+      </div>
+
+      <!-- SVG Git Graph -->
+      <svg width="100%" height="200" viewBox="0 0 900 200" style="min-width:700px; display:block;">
+        <!-- main line -->
+        <line x1="80" y1="60" x2="820" y2="60" stroke="#7a6330" stroke-width="2"/>
+        <line x1="80" y1="60" x2="500" y2="60" stroke="#c9a84c" stroke-width="2"/>
+
+        <!-- branch line -->
+        <line x1="280" y1="60" x2="280" y2="130" stroke="rgba(78,205,196,0.4)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="280" y1="130" x2="560" y2="130" stroke="#4ecdc4" stroke-width="2"/>
+        <line x1="560" y1="130" x2="560" y2="60" stroke="rgba(78,205,196,0.4)" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <!-- dead branch -->
+        <line x1="400" y1="60" x2="400" y2="165" stroke="rgba(230,57,70,0.3)" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <line x1="400" y1="165" x2="640" y2="165" stroke="rgba(230,57,70,0.5)" stroke-width="1.5"/>
+
+        <!-- main nodes -->
+        <circle cx="80" cy="60" r="6" fill="#0a0a0f" stroke="#c9a84c" stroke-width="2"/>
+        <circle cx="200" cy="60" r="6" fill="#0a0a0f" stroke="#c9a84c" stroke-width="2"/>
+        <circle cx="280" cy="60" r="6" fill="#0a0a0f" stroke="#c9a84c" stroke-width="2"/>
+        <circle cx="400" cy="60" r="6" fill="#0a0a0f" stroke="#c9a84c" stroke-width="2"/>
+        <circle cx="560" cy="60" r="8" fill="rgba(87,204,153,0.2)" stroke="#57cc99" stroke-width="2.5"/>
+        <circle cx="700" cy="60" r="6" fill="#0a0a0f" stroke="#c9a84c" stroke-width="2"/>
+        <circle cx="820" cy="60" r="8" fill="#c9a84c" stroke="#c9a84c" stroke-width="2"/>
+
+        <!-- branch nodes -->
+        <circle cx="350" cy="130" r="5" fill="#0a0a0f" stroke="#4ecdc4" stroke-width="2"/>
+        <circle cx="460" cy="130" r="5" fill="#0a0a0f" stroke="#4ecdc4" stroke-width="2"/>
+        <circle cx="560" cy="130" r="5" fill="#0a0a0f" stroke="#4ecdc4" stroke-width="2"/>
+
+        <!-- dead branch node -->
+        <circle cx="500" cy="165" r="5" fill="#0a0a0f" stroke="#e63946" stroke-width="1.5" opacity="0.6"/>
+        <circle cx="640" cy="165" r="5" fill="#0a0a0f" stroke="#e63946" stroke-width="1.5" opacity="0.5"/>
+        <line x1="650" y1="160" x2="670" y2="170" stroke="#e63946" stroke-width="1.5" opacity="0.5"/>
+        <line x1="650" y1="170" x2="670" y2="160" stroke="#e63946" stroke-width="1.5" opacity="0.5"/>
+
+        <!-- labels main -->
+        <text x="80" y="42" font-family="JetBrains Mono" font-size="9" fill="#7a7870" text-anchor="middle">DISTRIBUIÇÃO</text>
+        <text x="200" y="42" font-family="JetBrains Mono" font-size="9" fill="#7a7870" text-anchor="middle">CITAÇÃO</text>
+        <text x="280" y="42" font-family="JetBrains Mono" font-size="9" fill="#7a7870" text-anchor="middle">RESPOSTA</text>
+        <text x="400" y="42" font-family="JetBrains Mono" font-size="9" fill="#7a7870" text-anchor="middle">fork:testemunhas</text>
+        <text x="560" y="42" font-family="JetBrains Mono" font-size="9" fill="#57cc99" text-anchor="middle">MERGE ✓</text>
+        <text x="700" y="42" font-family="JetBrains Mono" font-size="9" fill="#7a7870" text-anchor="middle">INSTRUÇÃO</text>
+        <text x="820" y="42" font-family="JetBrains Mono" font-size="9" fill="#c9a84c" text-anchor="middle">SENTENÇA</text>
+
+        <!-- labels branch -->
+        <text x="350" y="150" font-family="JetBrains Mono" font-size="9" fill="#4ecdc4" text-anchor="middle">pedido</text>
+        <text x="460" y="150" font-family="JetBrains Mono" font-size="9" fill="#4ecdc4" text-anchor="middle">deliberação</text>
+        <text x="560" y="150" font-family="JetBrains Mono" font-size="9" fill="#4ecdc4" text-anchor="middle">deferido</text>
+
+        <!-- dead branch labels -->
+        <text x="500" y="183" font-family="JetBrains Mono" font-size="9" fill="#e63946" text-anchor="middle" opacity="0.6">pedido</text>
+        <text x="640" y="183" font-family="JetBrains Mono" font-size="9" fill="#e63946" text-anchor="middle" opacity="0.5">indeferido</text>
+
+        <!-- track labels -->
+        <text x="30" y="64" font-family="JetBrains Mono" font-size="9" fill="#c9a84c">MAIN</text>
+        <text x="30" y="134" font-family="JetBrains Mono" font-size="9" fill="#4ecdc4">INC-01</text>
+        <text x="30" y="169" font-family="JetBrains Mono" font-size="9" fill="#e63946" opacity="0.6">INC-02</text>
+      </svg>
+
+      <div class="git-legend">
+        <div class="git-legend-item">
+          <div class="git-legend-dot" style="border-color:var(--gold)"></div>
+          commit no main
+        </div>
+        <div class="git-legend-item">
+          <div class="git-legend-dot" style="border-color:var(--cyan)"></div>
+          incidente deferido (mergeado)
+        </div>
+        <div class="git-legend-item">
+          <div class="git-legend-dot" style="border-color:var(--red)"></div>
+          incidente indeferido (branch morto)
+        </div>
+        <div class="git-legend-item">
+          <div class="git-legend-dot" style="border-color:var(--green); background:rgba(87,204,153,0.2)"></div>
+          ponto de merge
+        </div>
+        <div class="git-legend-item">
+          <div class="git-legend-dot" style="border-color:var(--gold); background:var(--gold)"></div>
+          estado terminal (v1.0.0-stable)
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1.5rem;">
+      <div class="code-block" data-lang="conceito">
+        <pre><span class="c-comment"># Analogia Git ↔ Juízo</span>
+<span class="c-param">main branch</span>    → processo principal
+<span class="c-param">branch</span>         → pedido incidental
+<span class="c-param">commit</span>         → evento processual
+<span class="c-param">pull request</span>   → petição de incidente
+<span class="c-param">merge</span>          → deferimento
+<span class="c-param">branch morto</span>   → indeferimento
+<span class="c-param">diff</span>           → histórico auditável
+<span class="c-param">hash</span>           → assinatura criptográfica
+<span class="c-param">tag v1.0.0</span>     → trânsito em julgado
+<span class="c-param">hotfix</span>         → recurso + reforma</pre>
+      </div>
+      <div class="code-block" data-lang="regra">
+        <pre><span class="c-comment"># Política de merge com conflito</span>
+
+<span class="c-comment"># Se dois incidentes tramitam</span>
+<span class="c-comment"># simultaneamente e ambos são</span>
+<span class="c-comment"># deferidos sobre o mesmo campo:</span>
+
+<span class="c-keyword">if</span> conflito_detectado:
+    <span class="c-comment"># Sistema sinaliza ao juiz</span>
+    <span class="c-comment"># Juiz resolve — sempre</span>
+    resolucao = <span class="c-class">Juiz</span>.<span class="c-method">deliberar</span>(
+        conflito, contexto
+    )
+    <span class="c-comment"># Não existe merge automático</span>
+    <span class="c-comment"># em conflito de mérito</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 03 PREVISIBILIDADE -->
+  <section id="previsibilidade">
+    <div class="section-label">03 · Princípio da Previsibilidade</div>
+    <h2 class="section-title">Domando a <em>entropia</em><br>processual</h2>
+
+    <div class="principle-box">
+      <p class="principle-text">
+        Toda tecnologia é uma tentativa de domar a entropia. O processo judicial deveria 
+        ser isso — e virou o oposto. A lógica do "pedir não custa" é um exploit do sistema: 
+        custo zero para inserir ruído, custo alto para processar. 
+        Quem paga é o juiz, o cartório, a parte contrária.
+      </p>
+      <p class="principle-source">Fundamento · Previsibilidade como design · Ruído tem custo para quem o gera</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.2rem; margin:2rem 0;">
+      <div style="padding:1.5rem; background:var(--surface); border:1px solid rgba(255,255,255,0.05); border-top:2px solid var(--red);">
+        <div style="font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700; color:var(--parchment); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.8rem;">Sistema Atual</div>
+        <div style="font-size:0.88rem; line-height:1.8; color:var(--text-dim);">Custo zero para inserir ruído no processo. Chicanas, retórica vazia, pedidos descabidos — tudo aceito, tudo numerado, tudo abarrota o main.</div>
+      </div>
+      <div style="padding:1.5rem; background:var(--surface); border:1px solid rgba(255,255,255,0.05); border-top:2px solid var(--gold);">
+        <div style="font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700; color:var(--parchment); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.8rem;">Regra Juízo</div>
+        <div style="font-size:0.88rem; line-height:1.8; color:var(--text-dim);">Pedido fora da gramática do estado atual → isolado como branch. Se indeferido → nó morto no DAG. Não contamina o main. Auditável, mas sem peso.</div>
+      </div>
+      <div style="padding:1.5rem; background:var(--surface); border:1px solid rgba(255,255,255,0.05); border-top:2px solid var(--cyan);">
+        <div style="font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700; color:var(--parchment); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.8rem;">Resultado</div>
+        <div style="font-size:0.88rem; line-height:1.8; color:var(--text-dim);">O main do processo reflete apenas o que importa. Análise do juiz é cirúrgica. Tribunais superiores lêem o DAG limpo + branches para contexto.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem; display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center;">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:var(--text-dim); letter-spacing:0.15em; margin-right:0.5rem;">FSM GARANTE:</span>
+      <span class="state-badge gold">atos fora de fase → rejeitados</span>
+      <span class="state-badge gold">prazos → computados automaticamente</span>
+      <span class="state-badge gold">nulidades → impossíveis por design</span>
+      <span class="state-badge">aleatoriedade estrutural → eliminada</span>
+      <span class="state-badge">discricionariedade legítima → preservada</span>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 04 FSM -->
+  <section id="fsm">
+    <div class="section-label">04 · Máquina de Estados</div>
+    <h2 class="section-title">O processo como<br><em>máquina de estados</em></h2>
+    <p class="section-intro">
+      Cada estado tem transições <strong>permitidas</strong> e transições <strong>barradas</strong>.
+      O sistema não aceita atos fora de fase — eliminando nulidades na origem.
+      O Judiciário é o servidor. Os atores são clientes. Todo ato é um POST semântico validado.
+    </p>
+
+    <div class="fsm-container">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:var(--gold); margin-bottom:2rem; letter-spacing:0.12em;">
+        RITO ORDINÁRIO · EXEMPLO SIMPLIFICADO
+      </div>
+      <div class="fsm-flow">
+        <div class="fsm-node"><div class="fsm-state">DISTRIBUIÇÃO</div><div class="fsm-rule">petição inicial válida</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">CITAÇÃO PENDENTE</div><div class="fsm-rule">despacho do juiz</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">CITADO</div><div class="fsm-rule">AR / oficial / edital</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">PRAZO RESPOSTA</div><div class="fsm-rule">15 / 30 dias CPC</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">CONTESTADO</div><div class="fsm-rule">objeto estruturado</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">SANEAMENTO</div><div class="fsm-rule">decisão saneadora</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">INSTRUÇÃO</div><div class="fsm-rule">audiências / provas</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">SENTENÇA</div><div class="fsm-rule">deploy em produção</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state">PRAZO RECURSAL</div><div class="fsm-rule">15 dias CPC</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state terminal">TRÂNSITO EM JULGADO</div><div class="fsm-rule" style="color:var(--cyan)">v1.0.0-stable · frozen</div></div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.2rem; display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center;">
+      <span style="font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:var(--text-dim); letter-spacing:0.15em; margin-right:0.3rem;">POR TRANSIÇÃO → AUTO:</span>
+      <span class="state-badge">geração de prazo</span>
+      <span class="state-badge">notificação às partes</span>
+      <span class="state-badge">expedição de ofícios</span>
+      <span class="state-badge">bloqueio de atos inválidos</span>
+      <span class="state-badge">log imutável de eventos</span>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 05 DSL -->
+  <section id="dsl">
+    <div class="section-label">05 · Linguagem Processual</div>
+    <h2 class="section-title"><span style="font-family:'JetBrains Mono',monospace; font-weight:400; font-size:0.75em; color:var(--cyan)">juizo-core</span><br><em>a DSL do processo</em></h2>
+    <p class="section-intro">
+      Peças processuais não são documentos — são <strong>objetos de dados validáveis</strong>.
+      Uma biblioteca Python com sua própria gramática: se o sistema não compreende, retorna erro.
+      Fim da inépcia, fim do esquecimento de campos obrigatórios, fim do PDF digitalizado.
+    </p>
+
+    <div class="code-block" data-lang="python · juizo-core">
+      <pre><span class="c-keyword">from</span> <span class="c-class">juizo</span> <span class="c-keyword">import</span> Processo, Ato, Parte, Testemunha, Pedido, Fundamento, Rito
+
+<span class="c-comment"># O processo como objeto computável</span>
+processo = <span class="c-class">Processo</span>(
+    rito=<span class="c-class">Rito</span>.JUIZADO_ESPECIAL_CIVEL,
+    vara=<span class="c-class">Vara</span>(<span class="c-string">"1JEC-CURITIBA-PR"</span>)
+)
+
+<span class="c-comment"># A petição inicial como objeto estruturado</span>
+inicial = <span class="c-class">Ato</span>.PETICAO_INICIAL(
+    processo=processo,
+    autor=<span class="c-class">Parte</span>(cpf=<span class="c-string">"xxx.xxx.xxx-xx"</span>, qualificacao={...}),
+    reu=<span class="c-class">Parte</span>(cnpj=<span class="c-string">"xx.xxx.xxx/xxxx-xx"</span>),
+
+    fatos=<span class="c-string">"..."</span>,           <span class="c-comment"># campo livre · obrigatório</span>
+    argumentacao=<span class="c-string">"..."</span>,   <span class="c-comment"># campo retórico · opcional</span>
+
+    <span class="c-comment"># sistema sugere com base nos fatos; advogado confirma</span>
+    fundamentacao=[
+        <span class="c-class">Fundamento</span>.CDC_ART_14,
+        <span class="c-class">Fundamento</span>.DANO_MORAL_CONFIGURADO,
+    ],
+
+    pedidos=[
+        <span class="c-class">Pedido</span>(tipo=<span class="c-class">Pedido</span>.CONDENACAO_PECUNIARIA, valor=<span class="c-value">5000.00</span>),
+        <span class="c-class">Pedido</span>(tipo=<span class="c-class">Pedido</span>.DANO_MORAL, valor=<span class="c-value">10000.00</span>),
+        <span class="c-class">Pedido</span>(tipo=<span class="c-class">Pedido</span>.TUTELA_ANTECIPADA, urgencia=<span class="c-value">True</span>),
+    ],
+
+    <span class="c-comment"># testemunha sem endereço → comparece independente</span>
+    <span class="c-comment"># sistema NÃO expedirá mandado / carta de intimação</span>
+    testemunhas=[
+        <span class="c-class">Testemunha</span>(
+            nome=<span class="c-string">"Maria Silva"</span>,
+            cpf=<span class="c-string">"yyy.yyy.yyy-yy"</span>,
+            endereco=<span class="c-class">Endereco</span>(rua=<span class="c-string">"..."</span>, cidade=<span class="c-string">"Curitiba"</span>),
+            comparece_independente=<span class="c-value">False</span>  <span class="c-comment"># sistema expede intimação</span>
+        ),
+    ],
+)
+
+<span class="c-comment"># Validação ANTES do protocolo</span>
+resultado = inicial.<span class="c-method">validar</span>()
+
+<span class="c-keyword">if</span> resultado.erros:
+    <span class="c-comment"># lista exata do que falta · sem surpresas</span>
+    <span class="c-keyword">raise</span> <span class="c-class">ErroProtocolo</span>(resultado.erros)
+
+<span class="c-comment"># Protocola → dispara FSM → notifica → computa prazos</span>
+processo.<span class="c-method">protocolar</span>(inicial)</pre>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-top:1.5rem;">
+      <div class="code-block" data-lang="python · incidente">
+        <pre><span class="c-comment"># Pedido incidental → branch automático</span>
+incidente = <span class="c-class">Ato</span>.PEDIDO_INCIDENTAL(
+    processo=processo,
+    tipo=<span class="c-class">Incidente</span>.ADITAMENTO_TESTEMUNHAS,
+    requerente=advogado,
+    fundamentacao=<span class="c-string">"substabelecimento + novos fatos"</span>,
+    novas_testemunhas=[...],
+)
+
+<span class="c-comment"># Cria branch · não toca no main</span>
+branch = processo.<span class="c-method">abrir_incidente</span>(incidente)
+<span class="c-comment"># branch.id = INC-2024-00847</span>
+<span class="c-comment"># branch.ref_main = PROC-2024-11234</span>
+
+<span class="c-comment"># Juiz defere → merge automático</span>
+<span class="c-comment"># Juiz indefere → branch morto</span>
+<span class="c-comment"># Ambos: auditáveis, rastreáveis</span></pre>
+      </div>
+      <div class="code-block" data-lang="python · migração">
+        <pre><span class="c-comment"># Ferramentas de migração do legado</span>
+<span class="c-keyword">from</span> <span class="c-class">juizo.migration</span> <span class="c-keyword">import</span> LegacyImporter
+
+importer = <span class="c-class">LegacyImporter</span>(source=<span class="c-string">"projudi"</span>)
+
+<span class="c-comment"># Pipeline de ingestão de legado</span>
+importer.<span class="c-method">from_pdf</span>(arquivo)        <span class="c-comment"># OCR → objeto</span>
+importer.<span class="c-method">from_video</span>(video)        <span class="c-comment"># transcrição → texto</span>
+importer.<span class="c-method">from_scan</span>(imagem)        <span class="c-comment"># visão computacional</span>
+importer.<span class="c-method">from_manuscrito</span>(foto)    <span class="c-comment"># HTR handwriting</span>
+
+<span class="c-comment"># IA classifica → serventuário valida</span>
+<span class="c-comment"># 70-80% automatizado, 20-30% humano</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 06 AGENTE IA -->
+  <section id="agente">
+    <div class="section-label">06 · Inteligência Jurisdicional</div>
+    <h2 class="section-title">O <em>Agente IA</em><br>do magistrado</h2>
+    <p class="section-intro">
+      Cada magistrado terá um Agente IA que aprende seus posicionamentos, entende seu estilo de 
+      fundamentação, conhece sua jurisprudência pessoal. Não é automação da decisão —
+      é o <strong>assessor digital perfeito</strong>.
+    </p>
+
+    <div class="agent-grid">
+      <div class="agent-card layer1">
+        <div class="agent-layer">Camada 1 · Assessor Digital</div>
+        <div class="agent-title">Clone do Magistrado</div>
+        <div class="agent-text">Aprende 300+ casos do juiz. Quando entra processo novo: pré-analisa, sugere fundamentação provável, identifica padrão de julgamento. O juiz confirma, ajusta ou diverge — mas o trabalho pesado já foi feito.</div>
+      </div>
+      <div class="agent-card layer2">
+        <div class="agent-layer">Camada 2 · Previsibilidade para as Partes</div>
+        <div class="agent-title">Litigar com Informação</div>
+        <div class="agent-text">Advogados e partes terão acesso a probabilidade de êxito baseada no histórico do juiz sorteado. Filtro de litígios sem fundamento. Acordos tornam-se matematicamente racionais antes do processo iniciar.</div>
+      </div>
+      <div class="agent-card layer3">
+        <div class="agent-layer">Camada 3 · Agregação Nacional</div>
+        <div class="agent-title">Jurisprudência Emergente</div>
+        <div class="agent-text">Posicionamentos de N magistrados agregados em tempo real. O entendimento majoritário de fato — não o de 7 ministros. A pressão da base sobre o topo. Ordem emergente a partir do comportamento local.</div>
+      </div>
+      <div class="agent-card layer4">
+        <div class="agent-layer">Camada 4 · Auditoria de Equidade</div>
+        <div class="agent-title">Viés Visível, Não Censurado</div>
+        <div class="agent-text">Se o modelo aprende viés histórico, o sistema o torna visível e questionável — não o corrige silenciosamente. Transparência sobre o comportamento real do Judiciário. Pressão por uniformidade onde houver injustiça.</div>
+      </div>
+    </div>
+
+    <div class="principle-box" style="margin-top:2rem;">
+      <p class="principle-text" style="font-size:1.3rem;">
+        Pela primeira vez na história, a fixação do "entendimento" judicial sobre um caso 
+        virá de baixo. Não será o entendimento de sete pessoas —
+        será o entendimento <em>majoritário de fato</em>, que deverá viger.
+      </p>
+      <p class="principle-source">Visão · Jurisprudência como dado agregado · Democracia jurisdicional</p>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 07 PILARES -->
+  <section id="pilares">
+    <div class="section-label">07 · Arquitetura Funcional</div>
+    <h2 class="section-title">Os pilares do<br><em>novo sistema</em></h2>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-number">01</div>
+        <div class="pillar-title">FSM por Rito</div>
+        <div class="pillar-text">Máquina de estados para cada rito processual. Transições válidas bloqueiam nulidades na origem. O sistema é estruturalmente correto — não por vigilância, mas por design.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-number">02</div>
+        <div class="pillar-title">DSL Processual</div>
+        <div class="pillar-text">juizo-core: biblioteca Python com gramática própria. Peças são objetos. Validação antes do protocolo. Fim da inépcia, do esquecimento de campos, das peças escaneadas.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-number">03</div>
+        <div class="pillar-title">Git Jurisdicional</div>
+        <div class="pillar-text">Processo como DAG. Incidentes como branches. Deferimentos como merges. Trânsito em julgado como tag de release. Histórico imutável com hash criptográfico em cada commit.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-number">04</div>
+        <div class="pillar-title">Deliberação Computável</div>
+        <div class="pillar-text">Despacho do juiz dispara atos automáticos: ofícios, mandados, intimações, prazos. Linguagem natural do juiz extraída por IA e convertida em ações sistêmicas.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-number">05</div>
+        <div class="pillar-title">Agente IA por Magistrado</div>
+        <div class="pillar-text">Clone jurisdicional que aprende cada juiz. Assessor digital. Previsibilidade para as partes. Subsídio para jurisprudência emergente de baixo.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-number">06</div>
+        <div class="pillar-title">Integração Total</div>
+        <div class="pillar-text">Tribunais, delegacias, penitenciárias, bancos, acolhimentos — um dataset único. REST semântico. Cada ator é um cliente do servidor jurisdicional.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 08 MIGRAÇÃO -->
+  <section id="integracao">
+    <div class="section-label">08 · Estratégia de Implantação</div>
+    <h2 class="section-title">Strangler fig:<br><em>migração sem ruptura</em></h2>
+    <p class="section-intro">
+      O novo sistema cresce em volta do antigo até que o antigo murche por si só.
+      Duas opções para os tribunais — sem obrigação de escolha imediata.
+    </p>
+
+    <div class="migration-grid">
+      <div class="migration-card">
+        <h4>Opção A · Parallel Run</h4>
+        <ul>
+          <li>Processos atuais continuam no sistema legado (PJe, Projudi, e-SAJ) até arquivamento natural</li>
+          <li>Novos processos entram no Juízo desde o primeiro dia</li>
+          <li>Zero risco operacional para o tribunal</li>
+          <li>Extinção orgânica do legado em 3–7 anos dependendo do acervo</li>
+          <li>Recomendado para início de implantação</li>
+        </ul>
+      </div>
+      <div class="migration-card">
+        <h4>Opção B · Importação Total</h4>
+        <ul>
+          <li>Pipeline de ingestão: OCR, transcrição de vídeo, HTR manuscrito</li>
+          <li>IA pré-classifica 70-80% dos atos — serventuário valida e corrige</li>
+          <li>Cada processo importado recebe schema completo no novo formato</li>
+          <li>Trabalho intenso mas único — amortizado pela qualidade futura</li>
+          <li>Recomendado apenas após maturidade do sistema no Opção A</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stakeholders">
+      <div class="stakeholder">
+        <span class="stakeholder-icon">⚖️</span>
+        <div class="stakeholder-name">Magistrado</div>
+        <div class="stakeholder-role">Delibera, assina, despacha. Agente IA como assessor.</div>
+      </div>
+      <div class="stakeholder">
+        <span class="stakeholder-icon">📜</span>
+        <div class="stakeholder-name">Cartório</div>
+        <div class="stakeholder-role">Executa, certifica, valida importações de legado.</div>
+      </div>
+      <div class="stakeholder">
+        <span class="stakeholder-icon">👔</span>
+        <div class="stakeholder-name">Advogado</div>
+        <div class="stakeholder-role">Peticiona via DSL. Formulário guiado. Validação em tempo real.</div>
+      </div>
+      <div class="stakeholder">
+        <span class="stakeholder-icon">🏛️</span>
+        <div class="stakeholder-name">MP / DPE</div>
+        <div class="stakeholder-role">Acesso institucional. Ofícios automáticos. Custos legis via API.</div>
+      </div>
+      <div class="stakeholder">
+        <span class="stakeholder-icon">🔒</span>
+        <div class="stakeholder-name">Delegacia</div>
+        <div class="stakeholder-role">Recebe mandados digitais. Informa prisões. Integra BO ao processo.</div>
+      </div>
+      <div class="stakeholder">
+        <span class="stakeholder-icon">🏢</span>
+        <div class="stakeholder-name">Penitenciária</div>
+        <div class="stakeholder-role">Custodiados, alvarás, transferências via API integrada.</div>
+      </div>
+      <div class="stakeholder">
+        <span class="stakeholder-icon">🏦</span>
+        <div class="stakeholder-name">Banco / BACEN</div>
+        <div class="stakeholder-role">BacenJud, penhoras e bloqueios disparados por despacho.</div>
+      </div>
+      <div class="stakeholder">
+        <span class="stakeholder-icon">👥</span>
+        <div class="stakeholder-name">Partes</div>
+        <div class="stakeholder-role">Andamento em tempo real. Intimações com ACK. Previsibilidade.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 09 CEJUSC MVP -->
+  <section id="cejusc">
+    <div class="section-label">09 · Primeiro Deploy · MVP</div>
+    <h2 class="section-title">CEJUSC:<br><em>o projeto zero</em></h2>
+    <p class="section-intro">
+      O caso de uso ideal para validação do conceito. Poucos estados, poucos atores, sem sentença de mérito, 
+      alto volume. Uma FSM com menos de 10 estados que pode ser construída, testada e demonstrada 
+      antes de qualquer discussão com TJ ou CNJ.
+    </p>
+
+    <div class="fsm-container">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:var(--green); margin-bottom:2rem; letter-spacing:0.12em;">
+        CEJUSC · RITO DE CONCILIAÇÃO PRÉ-PROCESSUAL · FSM COMPLETA
+      </div>
+      <div class="fsm-flow">
+        <div class="fsm-node"><div class="fsm-state cejusc">SOLICITAÇÃO</div><div class="fsm-rule">formulário estruturado</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state cejusc">TRIAGEM</div><div class="fsm-rule">validação de competência</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state cejusc">AGENDADA</div><div class="fsm-rule">data + conciliador</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state cejusc">NOTIFICADAS</div><div class="fsm-rule">ACK confirmado</div></div>
+        <div class="fsm-arrow">▶</div>
+        <div class="fsm-node"><div class="fsm-state cejusc">REALIZADA</div><div class="fsm-rule">audiência ocorreu</div></div>
+      </div>
+      <div style="display:flex; gap:2rem; margin-top:2rem; flex-wrap:wrap;">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:var(--green); letter-spacing:0.15em; margin-bottom:0.5rem;">→ COM ACORDO</div>
+          <div class="fsm-flow">
+            <div class="fsm-node"><div class="fsm-state cejusc">ACORDO REDIGIDO</div><div class="fsm-rule">DSL de acordo</div></div>
+            <div class="fsm-arrow">▶</div>
+            <div class="fsm-node"><div class="fsm-state cejusc">HOMOLOGADO</div><div class="fsm-rule">assinatura digital</div></div>
+            <div class="fsm-arrow">▶</div>
+            <div class="fsm-node"><div class="fsm-state terminal" style="border-color:var(--green);color:var(--green);">ARQUIVADO:ACORDO</div><div class="fsm-rule" style="color:var(--green);">título executivo</div></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:var(--red); letter-spacing:0.15em; margin-bottom:0.5rem;">→ SEM ACORDO</div>
+          <div class="fsm-flow">
+            <div class="fsm-node"><div class="fsm-state" style="border-color:var(--red);color:var(--red);">CERTIDÃO NEGATIVA</div><div class="fsm-rule">automática</div></div>
+            <div class="fsm-arrow">▶</div>
+            <div class="fsm-node"><div class="fsm-state terminal" style="border-color:var(--text-dim);color:var(--text-dim);">ARQUIVADO:SEM_ACORDO</div><div class="fsm-rule">encaminhamento judicial</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.5rem;">
+      <div style="padding:1.2rem; background:var(--surface3); border:1px solid rgba(255,255,255,0.04);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:var(--green); letter-spacing:0.15em; margin-bottom:0.5rem;">ESTADOS</div>
+        <div style="font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--parchment);">8</div>
+        <div style="font-size:0.8rem; color:var(--text-dim);">estados no rito completo</div>
+      </div>
+      <div style="padding:1.2rem; background:var(--surface3); border:1px solid rgba(255,255,255,0.04);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:var(--green); letter-spacing:0.15em; margin-bottom:0.5rem;">ATORES</div>
+        <div style="font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--parchment);">3</div>
+        <div style="font-size:0.8rem; color:var(--text-dim);">conciliador, partes, adv.</div>
+      </div>
+      <div style="padding:1.2rem; background:var(--surface3); border:1px solid rgba(255,255,255,0.04);">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:var(--green); letter-spacing:0.15em; margin-bottom:0.5rem;">ESTRATÉGIA</div>
+        <div style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; color:var(--parchment); line-height:1.3; margin-top:0.3rem;">Build →<br>Prove →<br>Then talk</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANIFESTO -->
+  <div class="manifesto">
+    <div class="manifesto-line" id="m1"><strong>O processo nunca foi papel.</strong></div>
+    <div class="manifesto-line" id="m2">Sempre foi <strong>programação com finalidade jurisdicional.</strong></div>
+    <div class="manifesto-line" id="m3">A sentença é o <strong>deploy em produção.</strong></div>
+    <div class="manifesto-line" id="m4">O recurso é o <strong>hotfix da instância superior.</strong></div>
+    <div class="manifesto-line" id="m5">O trânsito em julgado é o <strong>v1.0.0-stable.</strong></div>
+    <div class="manifesto-line gold" id="m6">Pela primeira vez, o entendimento virá <strong>de baixo.</strong></div>
+    <div class="manifesto-line cyan" id="m7"><strong>Juízo</strong> é o dataset. A jurisdição é o destino.</div>
+    <div style="margin-top:4rem; font-family:'JetBrains Mono',monospace; font-size:0.58rem; letter-spacing:0.4em; color:var(--text-dim);">
+      JUÍZO · SISTEMA DE INFORMAÇÃO JURISDICIONAL · CONCEITO v0.2
+    </div>
+  </div>
+
+</div><!-- /layer -->
+
+<script>
+// ── CANVAS: GRAFO DE ESTADOS ──
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, nodes = [], frame = 0;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function createNodes() {
+  nodes = [];
+  const count = Math.floor((W * H) / 16000);
+  for (let i = 0; i < count; i++) {
+    nodes.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      r: Math.random() * 1.5 + 0.4,
+      phase: Math.random() * Math.PI * 2,
+      color: Math.random() > 0.8 ? 'cyan' : 'gold'
+    });
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  frame++;
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 110) {
+        const alpha = (1 - d/110) * 0.12;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(201,168,76,${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(nodes[i].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[j].y);
+        ctx.stroke();
+      }
+    }
+  }
+  nodes.forEach(n => {
+    const pulse = Math.sin(frame * 0.018 + n.phase) * 0.3 + 0.7;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    const c = n.color === 'cyan'
+      ? `rgba(78,205,196,${0.35 * pulse})`
+      : `rgba(201,168,76,${0.4 * pulse})`;
+    ctx.fillStyle = c;
+    ctx.fill();
+    n.x += n.vx; n.y += n.vy;
+    if (n.x < 0 || n.x > W) n.vx *= -1;
+    if (n.y < 0 || n.y > H) n.vy *= -1;
+  });
+  requestAnimationFrame(draw);
+}
+
+resize(); createNodes(); draw();
+window.addEventListener('resize', () => { resize(); createNodes(); });
+
+// ── MANIFESTO SCROLL ──
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const lines = e.target.closest('.manifesto').querySelectorAll('.manifesto-line');
+      lines.forEach((l, i) => setTimeout(() => l.classList.add('visible'), i * 220));
+      observer.disconnect();
+    }
+  });
+}, { threshold: 0.2 });
+
+const manifesto = document.querySelector('.manifesto');
+if (manifesto) observer.observe(manifesto);
+
+// ── SCROLL REVEAL ──
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.pillar, .agent-card, .stakeholder, .migration-card').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(16px)';
+  el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+  revealObserver.observe(el);
+});
+</script>
+</body>
+</html>

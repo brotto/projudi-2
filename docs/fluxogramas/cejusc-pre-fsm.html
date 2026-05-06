@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEJUSC-PRÉ · FSM · Res. 403/2023 NUPEMEC-TJPR</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0f;
+    --gold: #c9a84c;
+    --gold-dim: #7a6330;
+    --cyan: #4ecdc4;
+    --green: #57cc99;
+    --red: #e63946;
+    --purple: #9b72cf;
+    --amber: #f4a261;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --text: #e8e4d8;
+    --text-dim: #7a7870;
+    --border: rgba(201,168,76,0.2);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.4rem, 4vw, 2.8rem);
+    font-weight: 800;
+    color: #f5f0e8;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-sub {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.3em;
+  }
+
+  /* ── LEGENDA ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 3rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+  }
+
+  .legend-box {
+    width: 12px; height: 12px;
+    border: 1.5px solid;
+    flex-shrink: 0;
+  }
+
+  /* ── CONTAINER PRINCIPAL ── */
+  .flow-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* ── NÓS ── */
+  .node {
+    padding: 0.6rem 1.2rem;
+    border: 1.5px solid;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.2s;
+    cursor: default;
+    position: relative;
+  }
+
+  .node:hover { filter: brightness(1.3); transform: translateY(-1px); }
+
+  .node.inicial    { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.06); min-width: 200px; }
+  .node.processo   { border-color: var(--cyan); color: var(--cyan); background: rgba(78,205,196,0.05); min-width: 220px; }
+  .node.decisao    { border-color: var(--amber); color: var(--amber); background: rgba(244,162,97,0.05); min-width: 200px; transform: rotate(0deg); }
+  .node.terminal-ok   { border-color: var(--green); color: var(--green); background: rgba(87,204,153,0.07); min-width: 220px; }
+  .node.terminal-no   { border-color: var(--text-dim); color: var(--text-dim); background: rgba(122,120,112,0.06); min-width: 220px; }
+  .node.terminal-err  { border-color: var(--red); color: var(--red); background: rgba(230,57,70,0.05); min-width: 200px; }
+  .node.externo    { border-color: var(--purple); color: var(--purple); background: rgba(155,114,207,0.05); min-width: 180px; border-style: dashed; }
+
+  .node-meta {
+    font-size: 0.48rem;
+    color: var(--text-dim);
+    margin-top: 0.25rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── SETAS ── */
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .arrow-line {
+    width: 1.5px;
+    background: var(--text-dim);
+    opacity: 0.4;
+  }
+
+  .arrow-head {
+    color: var(--text-dim);
+    font-size: 0.6rem;
+    opacity: 0.6;
+    line-height: 1;
+  }
+
+  .arrow-label {
+    font-size: 0.48rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    white-space: nowrap;
+    margin: 0.1rem 0;
+  }
+
+  /* ── BIFURCAÇÕES ── */
+  .fork {
+    display: flex;
+    align-items: flex-start;
+    gap: 3rem;
+    position: relative;
+  }
+
+  .fork::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1.5px;
+    background: rgba(122,120,112,0.25);
+  }
+
+  .fork-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .fork-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+  }
+
+  /* ── LINHAS HORIZONTAIS (desvios) ── */
+  .side-exits {
+    display: flex;
+    width: 100%;
+    max-width: 900px;
+    position: relative;
+    justify-content: center;
+    margin: 0.5rem 0;
+  }
+
+  .side-exit {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.5rem;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+  }
+
+  .side-exit.left  { right: calc(50% + 120px); }
+  .side-exit.right { left: calc(50% + 120px); }
+
+  .side-line {
+    width: 50px;
+    height: 1.5px;
+    background: rgba(230,57,70,0.4);
+  }
+
+  /* ── SEÇÃO ── */
+  .section-divider {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  .section-divider span {
+    font-size: 0.5rem;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    white-space: nowrap;
+  }
+
+  /* ── REGRAS LEGAIS ── */
+  .rules-box {
+    max-width: 750px;
+    margin: 3rem auto 0;
+    padding: 1.5rem 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+  }
+
+  .rules-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .rules-col h4 {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+  }
+
+  .rule-item {
+    font-size: 0.6rem;
+    line-height: 1.8;
+    color: var(--text-dim);
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .rule-item::before { content: '→'; color: var(--gold); flex-shrink: 0; }
+
+  /* ── SCHEMA FSM ── */
+  .schema-box {
+    max-width: 750px;
+    margin: 2rem auto 0;
+    padding: 1.5rem 2rem;
+    background: #0d0d14;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 3px solid var(--cyan);
+    overflow-x: auto;
+  }
+
+  .schema-box pre {
+    font-size: 0.7rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .c-k { color: #9b72cf; }
+  .c-s { color: #57cc99; }
+  .c-c { color: #4a5568; font-style: italic; }
+  .c-p { color: #4ecdc4; }
+  .c-v { color: #f4a261; }
+
+  @media (max-width: 700px) {
+    .fork { flex-direction: column; align-items: center; gap: 1rem; }
+    .fork::before { display: none; }
+    .rules-grid { grid-template-columns: 1fr; }
+    .side-exit { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Juízo · Sistema de Informação Jurisdicional</div>
+  <div class="header-title">CEJUSC-PRÉ · FSM</div>
+  <div class="header-sub">Res. 403/2023 · NUPEMEC · TJPR · Máquina de Estados Completa · MVP v0.1</div>
+</header>
+
+<!-- LEGENDA -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-box" style="border-color:var(--gold)"></div>estado inicial</div>
+  <div class="legend-item"><div class="legend-box" style="border-color:var(--cyan)"></div>estado de processo</div>
+  <div class="legend-item"><div class="legend-box" style="border-color:var(--amber)"></div>ponto de decisão</div>
+  <div class="legend-item"><div class="legend-box" style="border-color:var(--green)"></div>terminal · acordo</div>
+  <div class="legend-item"><div class="legend-box" style="border-color:var(--text-dim)"></div>terminal · sem acordo</div>
+  <div class="legend-item"><div class="legend-box" style="border-color:var(--red)"></div>terminal · arquivamento</div>
+  <div class="legend-item"><div class="legend-box" style="border-color:var(--purple); border-style:dashed"></div>ator / sistema externo</div>
+</div>
+
+<!-- FLUXOGRAMA PRINCIPAL -->
+<div class="flow-wrapper">
+
+  <!-- ENTRADA -->
+  <div class="node inicial">
+    SOLICITAÇÃO RECEBIDA
+    <div class="node-meta">art. 7º · verbal · eletrônico · plataforma TJPR</div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-head">▼</div></div>
+
+  <!-- TRIAGEM -->
+  <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+    <div class="node decisao">
+      TRIAGEM
+      <div class="node-meta">art. 7º §2º · adequação + transigibilidade</div>
+    </div>
+    <div style="position:absolute; right:-260px; top:0; display:flex; align-items:center; gap:0.5rem;">
+      <div style="width:80px; height:1.5px; background:rgba(230,57,70,0.4)"></div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <div class="node terminal-err" style="min-width:160px; font-size:0.55rem;">ARQUIVADO · IRREGULAR
+          <div class="node-meta">art. 9º §2º · 5 dias s/ regularização</div>
+        </div>
+        <div class="node terminal-err" style="min-width:160px; font-size:0.55rem;">ARQUIVADO · INCOMPETENTE
+          <div class="node-meta">art. 6º §1º · matéria excluída</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-label">ADEQUADO</div><div class="arrow-head">▼</div></div>
+
+  <!-- TAXA -->
+  <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+    <div class="node decisao">
+      VERIFICAÇÃO DE CUSTAS
+      <div class="node-meta">art. 8º · Lei Estadual nº 19.258/2017</div>
+    </div>
+    <div style="position:absolute; right:-260px; top:0; display:flex; align-items:center; gap:0.5rem;">
+      <div style="width:80px; height:1.5px; background:rgba(244,162,97,0.4)"></div>
+      <div class="node processo" style="min-width:160px; font-size:0.55rem;">ANÁLISE GRATUIDADE
+        <div class="node-meta">art. 8º §3º · juiz coordenador</div>
+      </div>
+    </div>
+    <div style="position:absolute; left:-260px; top:0; display:flex; align-items:center; gap:0.5rem;">
+      <div class="node terminal-err" style="min-width:160px; font-size:0.55rem;">ARQUIVADO · FALTA DE CUSTAS
+        <div class="node-meta">art. 8º §4º · não recolhimento</div>
+      </div>
+      <div style="width:80px; height:1.5px; background:rgba(230,57,70,0.4)"></div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-label">CUSTAS OK</div><div class="arrow-head">▼</div></div>
+
+  <!-- CADASTRO -->
+  <div class="node processo">
+    CADASTRADO NO SISTEMA
+    <div class="node-meta">art. 7º §3º · Projudi campo Cejusc-Pré</div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-head">▼</div></div>
+
+  <!-- AGENDAMENTO -->
+  <div class="node processo">
+    SESSÃO AGENDADA
+    <div class="node-meta">art. 10º II · data + conciliador/mediador designado</div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-head">▼</div></div>
+
+  <!-- NOTIFICAÇÕES -->
+  <div class="node processo">
+    NOTIFICAÇÕES ENVIADAS
+    <div class="node-meta">art. 10º III/IV · carta-convite · e-mail · WhatsApp · correios</div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-label">prazo ≤ 30 dias (art. 14)</div><div class="arrow-head">▼</div></div>
+
+  <!-- SESSÃO: REALIZADA? -->
+  <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+    <div class="node decisao">
+      SESSÃO REALIZADA?
+      <div class="node-meta">art. 12 · presença das partes + documentos</div>
+    </div>
+    <div style="position:absolute; right:-240px; top:0; display:flex; align-items:center; gap:0.5rem;">
+      <div style="width:60px; height:1.5px; background:rgba(230,57,70,0.4)"></div>
+      <div class="node terminal-err" style="min-width:160px; font-size:0.55rem;">ARQUIVADO · AUSÊNCIA
+        <div class="node-meta">art. 12 §3º · imediato</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-label">SIM · ambas presentes</div><div class="arrow-head">▼</div></div>
+
+  <!-- SESSÃO CONDUZIDA -->
+  <div class="node processo">
+    SESSÃO CONDUZIDA
+    <div class="node-meta">art. 11–12 · conciliador/mediador credenciado · presencial ou telepresencial</div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:20px"></div></div>
+
+  <!-- SESSÃO CONTINUAÇÃO? -->
+  <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+    <div class="node decisao">
+      CONTINUAÇÃO NECESSÁRIA?
+      <div class="node-meta">art. 12 §4º · prazo acordado entre partes e conciliador · máx. 60 dias total</div>
+    </div>
+    <div style="position:absolute; right:-240px; top:0; display:flex; align-items:center; gap:0.5rem;">
+      <div style="width:60px; height:1.5px; background:rgba(78,205,196,0.4)"></div>
+      <div class="node processo" style="min-width:160px; font-size:0.55rem;">SESSÃO CONTINUADA
+        <div class="node-meta">art. 14 · max 60 dias corridos</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line" style="height:30px"></div><div class="arrow-label">NÃO · resultado final</div><div class="arrow-head">▼</div></div>
+
+  <!-- RESULTADO: BIFURCAÇÃO -->
+  <div class="node decisao">
+    RESULTADO DA SESSÃO
+    <div class="node-meta">art. 12 §2-3 · acordo ou sem acordo</div>
+  </div>
+
+  <div style="height:30px; width:1.5px; background:rgba(122,120,112,0.3)"></div>
+
+  <!-- FORK: COM ACORDO / SEM ACORDO -->
+  <div class="fork">
+
+    <!-- COM ACORDO -->
+    <div class="fork-branch">
+      <div class="fork-label" style="color:var(--green)">✓ COM ACORDO</div>
+      <div class="arrow"><div class="arrow-line" style="height:15px"></div><div class="arrow-head">▼</div></div>
+      <div class="node processo">
+        ACORDO REDIGIDO
+        <div class="node-meta">art. 13 §3º · condições · prazos · consequências</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node decisao">
+        MP NECESSÁRIO?
+        <div class="node-meta">art. 6º · menores · incapazes</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-label">art. 15 §ú</div><div class="arrow-head">▼</div></div>
+      <div class="node externo">
+        MANIFESTAÇÃO DO MP
+        <div class="node-meta">art. 15 §ú · antes da conclusão</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node processo">
+        CONCLUSÃO AO JUIZ COORDENADOR
+        <div class="node-meta">art. 15 · análise e homologação</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node processo">
+        HOMOLOGAÇÃO JUDICIAL
+        <div class="node-meta">art. 15 · juiz coordenador</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node processo">
+        EXPEDIENTES GERADOS
+        <div class="node-meta">art. 16 · ofícios · mandados · custas cobradas antecipadamente</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node terminal-ok">
+        ARQUIVADO · ACORDO
+        <div class="node-meta">art. 16 · título executivo judicial · desarquivável (art. 17)</div>
+      </div>
+    </div>
+
+    <!-- SEM ACORDO -->
+    <div class="fork-branch">
+      <div class="fork-label" style="color:var(--red)">✗ SEM ACORDO</div>
+      <div class="arrow"><div class="arrow-line" style="height:15px"></div><div class="arrow-head">▼</div></div>
+      <div class="node processo">
+        ATA NEGATIVA LAVRADA
+        <div class="node-meta">art. 13 §1º · sem registro de tratativas</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node processo">
+        CERTIDÃO NEGATIVA EMITIDA
+        <div class="node-meta">art. 12 §3º · automática</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node terminal-no">
+        ARQUIVADO · SEM ACORDO
+        <div class="node-meta">art. 4º · sem prevenção · sem interrupção de prescrição</div>
+      </div>
+      <div class="arrow"><div class="arrow-line" style="height:20px"></div><div class="arrow-head">▼</div></div>
+      <div class="node externo">
+        ENCAMINHAMENTO AO JUÍZO
+        <div class="node-meta">art. 13 §2º · juízo competente</div>
+      </div>
+    </div>
+
+  </div><!-- /fork -->
+
+</div><!-- /flow-wrapper -->
+
+<!-- REGRAS LEGAIS -->
+<div class="rules-box">
+  <div class="rules-title">Regras Críticas para Implementação da FSM</div>
+  <div class="rules-grid">
+    <div class="rules-col">
+      <h4>Restrições de Competência (art. 6º §1º)</h4>
+      <div class="rule-item">Direitos indisponíveis não transacionáveis → bloqueio na triagem</div>
+      <div class="rule-item">Matéria federal → bloqueio na triagem</div>
+      <div class="rule-item">Criminal e trabalhista → bloqueio na triagem</div>
+      <div class="rule-item">Matéria sucessória → bloqueio na triagem</div>
+      <div class="rule-item">Alteração regime de bens → bloqueio</div>
+      <div class="rule-item">Usucapião imóveis → bloqueio</div>
+      <div class="rule-item">Produção probatória → bloqueio</div>
+      <h4 style="margin-top:1rem">Prazos Computáveis (art. 14)</h4>
+      <div class="rule-item">Sem sessão: prazo máximo = 30 dias corridos</div>
+      <div class="rule-item">Com sessões continuadas: prazo máximo = 60 dias corridos</div>
+      <div class="rule-item">Ausência de pagamento de taxa: arquivamento imediato</div>
+    </div>
+    <div class="rules-col">
+      <h4>Efeitos Negativos (art. 4º)</h4>
+      <div class="rule-item">NÃO induz prevenção</div>
+      <div class="rule-item">NÃO interrompe prescrição</div>
+      <div class="rule-item">NÃO constitui em mora</div>
+      <div class="rule-item">NÃO torna coisa litigiosa</div>
+      <div class="rule-item">NÃO vincula partes às propostas apresentadas</div>
+      <h4 style="margin-top:1rem">Atos Automáticos por Transição</h4>
+      <div class="rule-item">Cadastro → dispara carta-convite à parte reclamada</div>
+      <div class="rule-item">Agendamento → intimação da parte solicitante</div>
+      <div class="rule-item">Ausência → arquivamento imediato sem deliberação</div>
+      <div class="rule-item">Homologação → expedição de ofícios e mandados</div>
+      <div class="rule-item">Acordo com menores → conclusão automática ao MP antes do juiz</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEMA FSM -->
+<div class="schema-box">
+  <div style="font-size:0.5rem; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:1rem;">SCHEMA · ESTADOS E TRANSIÇÕES · JUIZO-CORE · CEJUSC_PRE</div>
+  <pre><span class="c-k">class</span> <span class="c-p">EstadoCejusc</span>(Enum):
+    SOLICITACAO_RECEBIDA    = <span class="c-s">"SOLICITACAO_RECEBIDA"</span>
+    TRIAGEM                 = <span class="c-s">"TRIAGEM"</span>
+    VERIFICACAO_CUSTAS      = <span class="c-s">"VERIFICACAO_CUSTAS"</span>
+    ANALISE_GRATUIDADE      = <span class="c-s">"ANALISE_GRATUIDADE"</span>
+    CADASTRADO              = <span class="c-s">"CADASTRADO"</span>
+    SESSAO_AGENDADA         = <span class="c-s">"SESSAO_AGENDADA"</span>
+    NOTIFICACOES_ENVIADAS   = <span class="c-s">"NOTIFICACOES_ENVIADAS"</span>
+    SESSAO_CONDUZIDA        = <span class="c-s">"SESSAO_CONDUZIDA"</span>
+    SESSAO_CONTINUADA       = <span class="c-s">"SESSAO_CONTINUADA"</span>    <span class="c-c"># max 60 dias</span>
+    ACORDO_REDIGIDO         = <span class="c-s">"ACORDO_REDIGIDO"</span>
+    AGUARDANDO_MP           = <span class="c-s">"AGUARDANDO_MP"</span>
+    CONCLUSO_JUIZ           = <span class="c-s">"CONCLUSO_JUIZ"</span>
+    HOMOLOGADO              = <span class="c-s">"HOMOLOGADO"</span>
+    <span class="c-c"># Terminais</span>
+    ARQUIVADO_ACORDO        = <span class="c-s">"ARQUIVADO_ACORDO"</span>       <span class="c-c"># título executivo</span>
+    ARQUIVADO_SEM_ACORDO    = <span class="c-s">"ARQUIVADO_SEM_ACORDO"</span>   <span class="c-c"># sem prevenção</span>
+    ARQUIVADO_AUSENCIA      = <span class="c-s">"ARQUIVADO_AUSENCIA"</span>     <span class="c-c"># imediato</span>
+    ARQUIVADO_FALTA_CUSTAS  = <span class="c-s">"ARQUIVADO_FALTA_CUSTAS"</span> <span class="c-c"># imediato</span>
+    ARQUIVADO_INCOMPETENTE  = <span class="c-s">"ARQUIVADO_INCOMPETENTE"</span> <span class="c-c"># triagem</span>
+    ARQUIVADO_IRREGULAR     = <span class="c-s">"ARQUIVADO_IRREGULAR"</span>    <span class="c-c"># 5 dias s/ regularizar</span></pre>
+</div>
+
+<div style="text-align:center; margin-top:3rem; font-size:0.5rem; letter-spacing:0.4em; color:var(--text-dim);">
+  JUÍZO · CEJUSC-PRÉ · FSM · Res. 403/2023 NUPEMEC TJPR · MVP v0.1
+</div>
+
+</body>
+</html>
