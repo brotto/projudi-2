@@ -33,6 +33,7 @@ from api.routes.reclamacoes import router as reclamacoes_router
 from api.routes.sessoes import router as sessoes_router
 from api.routes.acordos import router as acordos_router
 from api.routes.auth import router as auth_router
+from api.routes.agent import router as agent_router
 from api.deps import get_store, USE_SQL
 from api.schemas import CartaConviteOut, CertidaoNegativaOut, PrazosOut
 from api.store import EventStore
@@ -110,6 +111,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(reclamacoes_router, prefix="/api/v1")
 app.include_router(sessoes_router, prefix="/api/v1")
 app.include_router(acordos_router, prefix="/api/v1")
+app.include_router(agent_router, prefix="/api/v1")
 
 
 # ══════════════════════════════════════════════════════════════════════════

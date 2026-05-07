@@ -46,9 +46,14 @@ class AgentConfig:
     chunk_max_words: int = int(_env("JUIZO_CHUNK_MAX_WORDS", "400"))
 
     # ── Vault ─────────────────────────────────────────────────────────────
+    # Em dev (Mac), aponta pro Vault Obsidian do dono.
+    # Em produção (container), aponta pro bundle versionado em cejusc-pre/vault_bundle/.
+    # O env JUIZO_VAULT_PATH sobrescreve em qualquer ambiente.
     vault_path: str = _env(
         "JUIZO_VAULT_PATH",
-        "/Users/alebrotto/Documents/CEJUSC Pre Vault",
+        "/Users/alebrotto/Documents/CEJUSC Pre Vault"
+        if os.path.isdir("/Users/alebrotto/Documents/CEJUSC Pre Vault")
+        else str(__import__("pathlib").Path(__file__).resolve().parent.parent / "vault_bundle"),
     )
 
     # ── Provider switch ───────────────────────────────────────────────────

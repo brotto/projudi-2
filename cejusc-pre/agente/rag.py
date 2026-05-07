@@ -197,7 +197,14 @@ async def collection_stats() -> dict[str, Any]:
 
 async def index_vault(
     vault_path: str | None = None,
-    skip_globs: tuple[str, ...] = (".obsidian/*", ".git/*"),
+    skip_globs: tuple[str, ...] = (
+        ".obsidian/*", ".git/*",
+        # Manuais operacionais não são úteis no RAG — geram chunks monstruosos
+        # que estouram o contexto da LLM (ex: MANUAL PRÉ.md tem 5MB num único H1).
+        "MANUAL PRÉ.md",
+        "Manual de Atendimento – Pré.md",
+        "CLAUDE.md",
+    ),
 ) -> dict[str, Any]:
     """Walk the Vault, chunk every .md, embed, upsert. Returns counts."""
     vault = Path(vault_path or CONFIG.vault_path).resolve()
