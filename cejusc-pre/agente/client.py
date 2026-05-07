@@ -1,17 +1,22 @@
 """
-LLM client — provider-agnostic facade over Ollama (POC) and OpenAI (future).
+LLM client — single facade with two backends:
 
-Exposes:
-- chat(messages, model=None, **kwargs) -> str
-- embed(text) -> list[float]
+    chat()  → OpenRouter (frontier API per ADR-008)
+    embed() → Ollama nomic-embed-text (per ADR-005 fallback, embeddings only)
 
-For now, only the Ollama provider is implemented. The interface keeps the door
-open for a future OpenAI/Codex-API switch (ADR-008 was rejected for POC but
-the abstraction is cheap to maintain).
+Why split: the project's TJPR-authorized stance is to use a frontier API for
+reasoning/generation (latency + quality), while keeping embeddings on the
+self-hosted infra to avoid re-indexing the Vault and to bound the data
+that leaves the project for vector lookup (only the query, not chunks).
+
+Environment:
+    OPENROUTER_API_KEY   — required for chat()
+    JUIZO_LLM_PROVIDER   — "openrouter" (default) or "ollama" (full fallback)
 """
 
 from __future__ import annotations
 
+import os
 from typing import Any, Iterable
 
 import httpx
@@ -20,49 +25,75 @@ from .config import CONFIG
 
 
 # ─── HTTP timeouts ───────────────────────────────────────────────────────────
-# Embeddings are fast (~500 tok/s). Chat with 14B Q4 on 8 vCPU is slow:
-# realistic worst case is ~5-6 minutes for a 1500-token output.
-EMBED_TIMEOUT = 30.0
-CHAT_TIMEOUT = 600.0  # 10 min ceiling
+EMBED_TIMEOUT = 30.0       # nomic-embed-text is fast even on CPU
+CHAT_TIMEOUT = 180.0       # frontier API typically <30s; allow headroom
 
 
-class OllamaClient:
-    """Thin client for the Ollama HTTP API."""
+class LLMClient:
+    """Unified facade. Chat → OpenRouter, embed → Ollama."""
 
-    def __init__(self, base_url: str | None = None) -> None:
-        self._url = (base_url or CONFIG.ollama_url).rstrip("/")
+    def __init__(self) -> None:
+        # OpenRouter setup
+        self._or_url = CONFIG.openrouter_url.rstrip("/")
+        self._or_key = os.getenv("OPENROUTER_API_KEY", "")
+        # Ollama setup
+        self._ollama_url = CONFIG.ollama_url.rstrip("/")
+
+    # ── Chat ────────────────────────────────────────────────────────────────
 
     async def chat(
         self,
         messages: list[dict[str, str]],
         model: str | None = None,
-        **options: Any,
+        temperature: float = 0.2,
+        max_tokens: int | None = None,
     ) -> str:
-        """Run a chat completion. Returns the full assistant message text."""
-        body = {
+        """Run a chat completion via OpenRouter. Returns the full assistant text."""
+        if not self._or_key:
+            raise RuntimeError(
+                "OPENROUTER_API_KEY is not set. Export it or load from .dev.vars "
+                "(see ADR-008 in the Vault for setup instructions)."
+            )
+        body: dict[str, Any] = {
             "model": model or CONFIG.model_analyzer,
             "messages": messages,
-            "stream": False,
-            "options": {"temperature": 0.2, **options},
+            "temperature": temperature,
+        }
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
+        headers = {
+            "Authorization": f"Bearer {self._or_key}",
+            "Content-Type": "application/json",
+            # OpenRouter ranking attribution — recommended, optional
+            "HTTP-Referer": "https://github.com/brotto/projudi-2",
+            "X-Title": "Sistema Juizo - CEJUSC Pre",
         }
         async with httpx.AsyncClient(timeout=CHAT_TIMEOUT) as cli:
-            r = await cli.post(f"{self._url}/api/chat", json=body)
-            r.raise_for_status()
+            r = await cli.post(
+                f"{self._or_url}/chat/completions", json=body, headers=headers
+            )
+            # Surfacing the actual error body — OpenRouter returns helpful JSON
+            # explanations on 400/402/429/etc. that httpx.raise_for_status swallows.
+            if r.status_code >= 400:
+                try:
+                    err_body = r.json()
+                except Exception:
+                    err_body = {"raw": r.text[:500]}
+                raise RuntimeError(
+                    f"OpenRouter HTTP {r.status_code}: {err_body}"
+                )
             data = r.json()
-        return data.get("message", {}).get("content", "")
+        if "error" in data:
+            raise RuntimeError(f"OpenRouter error: {data['error']}")
+        return data["choices"][0]["message"]["content"]
+
+    # ── Embeddings ──────────────────────────────────────────────────────────
 
     async def embed(self, text: str, model: str | None = None) -> list[float]:
-        """Return the embedding vector for a single text.
-
-        nomic-embed-text has an 8K-token context. We defensively cap the input
-        to ~6K characters (~1.5K tokens — safe margin for non-ascii PT-BR text)
-        before calling the API. Truncation is rare in practice (Vault chunks
-        are split to <=400 words), but very long sections in MANUAL PRÉ.md
-        and similar can hit it.
-        """
+        """Single-text embedding via Ollama. Caps input at 6K chars (see ADR-005)."""
         body = {"model": model or CONFIG.model_embed, "prompt": text[:6000]}
         async with httpx.AsyncClient(timeout=EMBED_TIMEOUT) as cli:
-            r = await cli.post(f"{self._url}/api/embeddings", json=body)
+            r = await cli.post(f"{self._ollama_url}/api/embeddings", json=body)
             r.raise_for_status()
             data = r.json()
         return data.get("embedding", [])
@@ -73,12 +104,12 @@ class OllamaClient:
         model: str | None = None,
         on_error: str = "skip",  # "skip" | "raise" | "zero"
     ) -> list[list[float]]:
-        """Embed a batch sequentially (Ollama doesn't expose true batching).
+        """Batch embeddings (sequential — Ollama doesn't expose true batching).
 
-        Per-chunk error handling: an isolated 500 on Ollama shouldn't abort the
-        whole indexing run. ``on_error`` controls behavior:
+        Per-chunk error handling: an isolated 500 on Ollama shouldn't abort
+        the whole indexing run. ``on_error`` controls behavior:
           - "skip": return [] for failed chunks (caller filters them)
-          - "raise": propagate the exception (legacy behavior)
+          - "raise": propagate the exception
           - "zero": return a zero-vector placeholder
         """
         out: list[list[float]] = []
@@ -88,7 +119,6 @@ class OllamaClient:
             except httpx.HTTPError as e:
                 if on_error == "raise":
                     raise
-                # Best-effort logging via stderr (no logger import to keep deps light)
                 import sys
                 preview = t[:80].replace("\n", " ")
                 print(
@@ -105,14 +135,15 @@ class OllamaClient:
 # ─── Public factory ──────────────────────────────────────────────────────────
 
 
-def make_client() -> OllamaClient:
-    """Return the LLM client for the current provider.
+def make_client() -> LLMClient:
+    """Return the unified LLM client.
 
-    POC = Ollama only. The future OpenAI path will be added here.
+    Currently only the OpenRouter+Ollama hybrid is implemented. Full Ollama
+    fallback (chat too) is preserved as a future path; see ADR-005 archived.
     """
-    if CONFIG.llm_provider != "ollama":
+    if CONFIG.llm_provider not in {"openrouter", "ollama"}:
         raise NotImplementedError(
-            f"LLM provider '{CONFIG.llm_provider}' not implemented yet "
-            "(ADR-005 only ollama; ADR-008 was rejected)"
+            f"Unknown JUIZO_LLM_PROVIDER='{CONFIG.llm_provider}'. "
+            "Use 'openrouter' (default) or 'ollama' (fallback)."
         )
-    return OllamaClient()
+    return LLMClient()
