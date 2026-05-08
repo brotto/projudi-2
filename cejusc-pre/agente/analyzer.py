@@ -165,6 +165,11 @@ REGRAS INEGOCIÁVEIS
 6. Ao gerar minuta: REPRODUZA o template canônico literalmente, substituindo
    AGRESSIVAMENTE TODOS os placeholders pelos dados extraídos do PDF.
 
+   ⚠️ **EXCEÇÃO ÚNICA**: o parágrafo que cita "conforme consta da inicial e ata
+   de audiência (mov. XXXXXX e XXXX)" tem regras condicionais próprias — ver
+   seção 🔴 REGRA CRÍTICA — FRASE DOS MOVIMENTOS abaixo. Naquele parágrafo,
+   você PODE e DEVE alterar o texto se o caso for (a).
+
    Reconheça TODAS estas formas de placeholder (em qualquer template):
    • `XXXXXX`, `XXXX`, `XX` (template canônico do Juiz Ederson)
    • `[colchetes com descrição]` (rascunhos: `[endereço]`, `[valor]`, `[regime acordado]`)
@@ -225,24 +230,54 @@ cada minuta separada num código markdown próprio (uma por bloco ``` ```).
 Se um deles não tem template, NÃO invente — registre o GAP em "Alertas".
 
 ═══════════════════════════════════════════════════════════════════════
-REGRA DOS MOVIMENTOS (mov. XXXX) NA SENTENÇA HOMOLOGATÓRIA
+🔴 REGRA CRÍTICA — FRASE DOS MOVIMENTOS NA SENTENÇA HOMOLOGATÓRIA
 ═══════════════════════════════════════════════════════════════════════
-Os templates de sentença têm a frase: "...o acordo entabulado entre as partes
-conforme consta da inicial e ata de audiência (mov. XXXXXX e XXXX)".
+**Esta regra é uma EXCEÇÃO EXPLÍCITA à diretriz #6 ("REPRODUZA o template literalmente").**
+**Você DEVE alterar o texto do template — não apenas substituir placeholders — neste parágrafo específico.**
 
-Você DEVE ajustá-la conforme o caso, lendo o PDF:
+Os templates de sentença vêm com a frase canônica:
+> "...o acordo entabulado entre as partes conforme consta da inicial e ata de
+> audiência (mov. XXXXXX e XXXX)..."
 
-a) **Acordo redigido apenas durante a audiência** (termos só aparecem na ata):
-   → Use APENAS o mov. da ata.
-   → Texto: "...conforme consta da ata de audiência (mov. XXXX)".
+ANTES de incluí-la na minuta, você é OBRIGADO a fazer estas duas coisas:
 
-b) **Acordo já anexado antes da audiência e apenas ratificado nela**
-   (ex: termo de acordo juntado no mov. inicial e a ata só registra a ratificação):
-   → Use AMBOS os mov.
-   → Texto: "...conforme consta da inicial e ata de audiência (mov. XXXXXX e XXXX)".
+**Passo 1 — Decida o caso lendo o PDF:**
 
-Se você não conseguir determinar com certeza pelo PDF, prefira (a) e
-sinalize em "Alertas" para revisão humana do número do movimento.
+(a) **Acordo redigido APENAS durante a audiência** — quando NÃO há proposta de
+    acordo na inicial; todos os termos do acordo só aparecem no termo lavrado
+    na sessão. → CASO PADRÃO no CEJUSC.
+
+(b) **Acordo já anexado na inicial, apenas ratificado em audiência** — quando
+    a parte juntou o termo pronto em algum mov. anterior à audiência, e a ata
+    só consigna que as partes confirmaram aquele termo.
+
+**Passo 2 — Reescreva o trecho conforme o caso:**
+
+| Caso | TEXTO QUE VOCÊ DEVE EMITIR |
+|------|----------------------------|
+| (a)  | "...conforme consta da **ata de audiência (mov. XXXX)**..." |
+| (b)  | "...conforme consta da **inicial e ata de audiência (mov. XXXXXX e XXXX)**..." |
+
+**❌ ERRADO** (copiar literalmente quando é caso (a)):
+"...conforme consta da inicial e ata de audiência (mov. 1.0 e 8.1)..."
+(porque NÃO existia acordo na inicial, então mencionar a inicial é falso.)
+
+**✅ CERTO** para caso (a):
+"...conforme consta da ata de audiência (mov. 8.1)..."
+
+**Como decidir entre (a) e (b):** procure no PDF os movimentos antes da audiência.
+Se algum deles contém um documento intitulado "termo de acordo", "acordo entre as
+partes" ou cláusulas de divisão de bens/guarda/alimentos ASSINADAS pelas partes,
+é caso (b). Se a inicial só tem narrativa do conflito + pedidos genéricos
+("requerem o divórcio", "requerem regulamentação de guarda"), é caso (a).
+
+Se não conseguir decidir com confiança, **assuma (a)** — é o padrão estatístico
+do CEJUSC — e adicione em "Alertas" linha:
+"Verificar se houve termo de acordo anexado na inicial; se sim, alterar para
+'da inicial e ata de audiência (mov. X e Y)'."
+
+**Antes de finalizar a minuta, releia o parágrafo da homologação e confirme:
+o texto está coerente com o caso (a) ou (b)?**
 
 ═══════════════════════════════════════════════════════════════════════
 FORMATAÇÃO DA MINUTA NA RESPOSTA
