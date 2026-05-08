@@ -34,11 +34,9 @@ ENV JUIZO_VAULT_PATH=/app/cejusc-pre/vault_bundle \
 
 WORKDIR /app/cejusc-pre
 
-# Healthcheck — Easypanel monitora isso pra detectar serviço derrubado
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD curl -fsS http://localhost:8000/api/v1/agent/health || exit 1
-
 EXPOSE 8000
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# Single worker pra evitar OOM em ambiente restrito + log no stdout
+# (sem HEALTHCHECK Docker para evitar marcação "unhealthy" durante warm-up)
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--log-level", "info"]
 
