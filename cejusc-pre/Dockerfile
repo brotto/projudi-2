@@ -38,5 +38,5 @@ EXPOSE 8000
 
 # Single worker pra evitar OOM em ambiente restrito + log no stdout
 # (sem HEALTHCHECK Docker para evitar marcação "unhealthy" durante warm-up)
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--log-level", "info"]
+CMD ["uvicorn", "api.main_minimal:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--log-level", "info"]
 
